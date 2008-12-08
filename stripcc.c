@@ -1375,20 +1375,20 @@ try_compile_and_parse(int fast_mode, const char *comp_cmd, const char *comp_dir,
                 if (rets[cc_id].flags == F_UNKNOWN) {
                     /* new */
                     rets[cc_id].flags = F_USED;
-                    tmp_list = list_prepend_item_by_data(NULL, (void *)cc_branch);
+                    tmp_list = list_prepend_item_by_data(NULL, (void *)(long)cc_branch);
                     if (tmp_list == NULL)
                         OutOfMemory;
                     rets[cc_id].used_branch = tmp_list;
                 } else {
                     /* exist */
                     if (list_search_item_by_data(rets[cc_id].used_branch, 
-                                                 (void *)cc_branch) == NULL) 
+                                                 (void *)(long)cc_branch) == NULL) 
                     {
                         /* not found, at least 2 branch are valid */
                         rets[cc_id].flags |= F_RESERVECC;
                         /* append to used_branch */
                         tmp_list = list_prepend_item_by_data(rets[cc_id].used_branch, 
-                                                             (void *)cc_branch);
+                                                             (void *)(long)cc_branch);
                         if (tmp_list == NULL)
                             OutOfMemory;
                         rets[cc_id].used_branch = tmp_list;
@@ -1889,7 +1889,7 @@ _stripcc(const char *src_file, struct list_t *invalid_file_list,
                 } else {
                     /* used CC */
                     if (list_search_item_by_data(cur_cc[cur_nest]->used_branch, 
-                                                 (void *)cur_branch[cur_nest]) != NULL) 
+                                                 (void *)(long)cur_branch[cur_nest]) != NULL) 
                     {
                         /* defined branch */
                         defined[cur_nest] = 1;
@@ -1910,7 +1910,7 @@ _stripcc(const char *src_file, struct list_t *invalid_file_list,
                 if (cur_cc[cur_nest]->flags != F_UNKNOWN) {
                     /* used CC */
                     if (list_search_item_by_data(cur_cc[cur_nest]->used_branch, 
-                                                 (void *)cur_branch[cur_nest]) != NULL) 
+                                                 (void *)(long)cur_branch[cur_nest]) != NULL) 
                     {
                         /* defined branch */
                         defined[cur_nest] = 1;
@@ -1940,7 +1940,7 @@ _stripcc(const char *src_file, struct list_t *invalid_file_list,
                 if (cur_cc[cur_nest]->flags != F_UNKNOWN) {
                     /* used CC */
                     if (list_search_item_by_data(cur_cc[cur_nest]->used_branch, 
-                                                 (void *)cur_branch[cur_nest]) != NULL) 
+                                                 (void *)(long)cur_branch[cur_nest]) != NULL) 
                     {
                         /* defined branch */
                         defined[cur_nest] = 1;
