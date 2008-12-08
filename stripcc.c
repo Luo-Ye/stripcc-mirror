@@ -42,12 +42,12 @@
 
 #define CONF_FILE           "./stripcc.conf"
 #define ERR_FILE            "./stripcc.err"
-#define LINE_MAX            16384
+#define LINE_MAX            4096
 #define PATH_MAX            4096
 #define MAGIC               "eecbfb859094a362907dfb2f2cd3a8c8"
 #define TMPFILE             "eecbfb859094a362907dfb2f2cd3a8c8.tmp"
 #define CC_NEST_MAX         64
-#define PHYLINE_COUNT_MAX   4096
+#define PHYLINE_COUNT_MAX   1024
 #define RINGBUF_LEN         16384
 #define GCC_LACK_MAIN       "undefined reference to `main'"
 #define MAKE_LEAVE_DIR      "Leaving directory `"
