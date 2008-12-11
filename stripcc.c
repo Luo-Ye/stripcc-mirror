@@ -759,8 +759,7 @@ add_warning_cc_to_files(struct list_t *file_list, int fast_mode,
                             /* the begin of comments in this line */
                             /* bug? '\n' is missing */
                             comment_begin[0] = ' ';
-                            comment_begin[1] = '\n';
-                            comment_begin[2] = '\0';
+                            comment_begin[1] = '\0';
                             /* search #xxx */
                             if (logiline != NULL) {
                                 cc_type = get_line_type(logiline->linebuf);
@@ -1764,8 +1763,7 @@ _stripcc(const char *src_file, struct list_t *invalid_file_list,
                         /* the begin of comments in this line */
                         /* bug? '\n' is missing */
                         comment_begin[0] = ' ';
-                        comment_begin[1] = '\n';
-                        comment_begin[2] = '\0';
+                        comment_begin[1] = '\0';
                         /* set right_is_comment flag */
                         right_is_comment = 1;
                         /* search #xxx */
@@ -2093,6 +2091,7 @@ add_warning_cc:
 #endif
 
     printf("\033[32mo \033[0mTry to compile target, this operation may takes a few minutes");
+    fflush(stdout);
     comp_results = try_compile_and_parse(fast_mode, comp_cmd, comp_dir, ncc, &main_list);
     if (comp_results == NULL) {
         if (fast_mode) {
