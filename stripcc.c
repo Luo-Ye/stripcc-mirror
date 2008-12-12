@@ -2013,7 +2013,7 @@ static int
 build(const char *comp_cmd, const char *comp_dir)
 {
     pid_t pid;
-    int null_fd, status;
+    int ret, null_fd, status, count = 0;
 
     /* create child */
     pid = fork();
@@ -2041,8 +2041,25 @@ build(const char *comp_cmd, const char *comp_dir)
     }
     /* parent */
     /* wait child */
-    if (wait(&status) == -1)
-        ERRExit;
+    while (1) {
+        ret = waitpid(pid, &status, WNOHANG);
+        if (ret == -1) {
+            ERRExit;
+        } else if (ret == 0) {
+            /* i'm alive */
+            count++;
+            if (count % 4 == 0) {
+                printf("\b\b\b   \b\b\b");
+                fflush(stdout);
+            } else {
+                printf(".");
+                fflush(stdout);
+            }
+            sleep(1);
+        } else {
+            break;
+        }
+    }
     if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
         /* success */
         return 0;
@@ -2172,10 +2189,12 @@ add_warning_cc:
     stripcc(file_list, invalid_file_list, comp_results);
 
     if (do_verify) {
-        printf("\033[32mo \033[0mStart to verify...\n");
+        printf("\033[32mo \033[0mStart to verify");
+        fflush(stdout);
         t = time(NULL);
         sleep(1);
         if (build(comp_cmd, comp_dir) == -1) {
+            printf("\n");
             printf("\033[31m  o Failed to verify.\033[0m\n");
             /* printf("\033[31m  o You can put follow files into the dont_strip_files section of %s and try again.\033[0m\n", CONF_FILE); */
             printf("\033[31m  o The following files were changed during compilation.\033[0m\n");
@@ -2193,6 +2212,7 @@ add_warning_cc:
             }
             exit(1);
         }
+        printf("\n");
     }
 
     printf("\033[32mo Done!\033[0m\n");
