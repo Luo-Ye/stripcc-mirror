@@ -7,6 +7,8 @@
  *         please read "CHANGELOG" to know what changed
  *  -- Modified By Du XiaoGang<dugang@188.com> in 20/09/2007
  *         please read "CHANGELOG" to know what changed
+ *  -- Modified By Du XiaoGang<dugang@188.com> in 12/12/2008
+ *         please read "CHANGELOG" to know what changed
  *
  *  This file is part of stripcc.                                          
  *                                                                          
@@ -33,6 +35,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -81,6 +84,7 @@ show_help(void)
            "  -c <str> Commands for build target program, \"make\" is default\n"
            "  -m <str> Directory to run build commands, current directory is default\n"
            "  -f       Working in fast mode (Experimental, NOT RECOMMENDED!)\n"
+           "  -n       Don't verify after strip\n"
            "  -v       Display this program's version number\n"
            "  -h       Display this output\n");
 }
@@ -88,7 +92,7 @@ show_help(void)
 static void
 show_ver(void)
 {
-    printf("stripcc 0.2.0 20081204\n"
+    printf("stripcc 0.2.0 20081212\n"
            "Copyright 2007-2008 Du XiaoGang <dugang@188.com>\n"
            "Modified By harite <harite.k@gmail.com>\n"
            "This program is free software; you may redistribute it under the terms of\n"
@@ -393,7 +397,7 @@ backup_files(struct list_t *file_list)
             exit(1);
         }
         unlink(path);
-        if (link((char *)file_list->data, path) == -1) 
+        if (link((char *)file_list->data, path) == -1)
             ERRExit;
         /* next */
         file_list = file_list->next;
@@ -1249,8 +1253,8 @@ struct cc_used_t {
 };
 
 static struct cc_used_t *
-try_compile_and_parse(int fast_mode, const char *comp_cmd, const char *comp_dir, int ncc, 
-                      struct list_t **main_list)
+try_build_and_parse(int fast_mode, const char *comp_cmd, const char *comp_dir, int ncc, 
+                    struct list_t **main_list)
 {
     struct cc_used_t *rets;
     struct ringbuf_t *stdout_rbuf, *stderr_rbuf;
@@ -2005,17 +2009,61 @@ stripcc(struct list_t *file_list, struct list_t *invalid_file_list,
     }
 }
 
+static int
+build(const char *comp_cmd, const char *comp_dir)
+{
+    pid_t pid;
+    int null_fd, status;
+
+    /* create child */
+    pid = fork();
+    if (pid == -1) {
+        /* error */
+        ERRExit;
+    } else if (pid == 0) {
+        /* child */
+        /* chdir */
+        if (comp_dir != NULL) {
+            if (chdir(comp_dir) == -1)
+                _ERRExit;
+        }
+        /* redirect stdin/stdout/stderr to /dev/null */
+        null_fd = open("/dev/null", O_RDWR);
+        if (null_fd == -1)
+            _ERRExit;
+        dup2(null_fd, 0);
+        dup2(null_fd, 1);
+        dup2(null_fd, 2);
+        close(null_fd);
+        /* exec */
+        execl("/bin/sh", "sh", "-c", comp_cmd, NULL);
+        _exit(1);
+    }
+    /* parent */
+    /* wait child */
+    if (wait(&status) == -1)
+        ERRExit;
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        /* success */
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
 int 
 main(int argc, char *argv[])
 {
-    int ret, ncc, fast_mode = 0;
+    int ret, ncc, fast_mode = 0, do_verify = 1;
     char *comp_cmd = "make", *comp_dir = NULL;
-    struct list_t *file_list, *invalid_file_list = NULL, *main_list = NULL;
+    struct list_t *file_list, *tmp_list, *invalid_file_list = NULL, *main_list = NULL;
     struct cc_used_t *comp_results;
+    time_t t;
+    struct stat st;
 
     /* parse args */
     while (1) {
-        ret = getopt(argc, argv, "c:m:fdvh");
+        ret = getopt(argc, argv, "c:m:fnvh");
         if (ret == -1) {
             if (argv[optind] != NULL) {
                 show_help();
@@ -2029,6 +2077,9 @@ main(int argc, char *argv[])
             break;
         case 'm':      /* make dir ... */
             comp_dir = optarg;
+            break;
+        case 'n':      /* dont verify ... */
+            do_verify = 0;
             break;
         case 'f':      /* fast mode ... */
             fast_mode = 1;
@@ -2090,12 +2141,12 @@ add_warning_cc:
     }
 #endif
 
-    printf("\033[32mo \033[0mTry to compile target, this operation may takes a few minutes");
+    printf("\033[32mo \033[0mTry to build target, this operation may takes a few minutes");
     fflush(stdout);
-    comp_results = try_compile_and_parse(fast_mode, comp_cmd, comp_dir, ncc, &main_list);
+    comp_results = try_build_and_parse(fast_mode, comp_cmd, comp_dir, ncc, &main_list);
     if (comp_results == NULL) {
         if (fast_mode) {
-            printf("\n\033[31m  o \033[0mFailed to compile target in fast mode, then we'll try it in normal mode.\n");
+            printf("\n\033[31m  o \033[0mFailed to build target in fast mode, then we'll try it in normal mode.\n");
             fast_mode = 0;
             restore_files(file_list, 0);
             if (invalid_file_list) {
@@ -2109,7 +2160,7 @@ add_warning_cc:
             sleep(1);
             goto add_warning_cc;
         } else {
-            printf("\n\033[31m  o Failed to compile target.\033[0m\n");
+            printf("\n\033[31m  o Failed to build target.\033[0m\n");
             exit(1);
         }
     }
@@ -2119,6 +2170,30 @@ add_warning_cc:
 
     printf("\033[32mo \033[0mStripping files...\n");
     stripcc(file_list, invalid_file_list, comp_results);
+
+    if (do_verify) {
+        printf("\033[32mo \033[0mStart to verify...\n");
+        t = time(NULL);
+        sleep(1);
+        if (build(comp_cmd, comp_dir) == -1) {
+            printf("\033[31m  o Failed to verify.\033[0m\n");
+            /* printf("\033[31m  o You can put follow files into the dont_strip_files section of %s and try again.\033[0m\n", CONF_FILE); */
+            printf("\033[31m  o The following files were changed during compilation.\033[0m\n");
+            /* check if some source file was changed */
+            tmp_list = file_list;
+            while (tmp_list != NULL) {
+                /* next */
+                if (lstat((char *)tmp_list->data, &st) == -1) {
+                    printf("\033[31m    %s\033[0m\n", (char *)tmp_list->data);
+                } else {
+                    if (st.st_mtime > t)
+                        printf("\033[31m    %s\033[0m\n", (char *)tmp_list->data);
+                }
+                tmp_list = tmp_list->next;
+            }
+            exit(1);
+        }
+    }
 
     printf("\033[32mo Done!\033[0m\n");
     return 0;

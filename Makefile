@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall
+CFLAGS=-g -O2 -Wall
 LD=gcc
 LDFLAGS=
 OBJS=list.o ringbuf.o

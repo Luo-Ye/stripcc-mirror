@@ -1,5 +1,27 @@
 #! /usr/bin/env python
 
+#############################################################################
+#                                                                           #
+#   File: autotest.py                                                       #
+#                                                                           #
+#   Copyright (C) 2008 Du XiaoGang <dugang@188.com>                         #
+#                                                                           #
+#   This file is part of stripcc.                                           #
+#                                                                           #
+#   stripcc is free software: you can redistribute it and/or modify         #
+#   it under the terms of the GNU General Public License as                 #
+#   published by the Free Software Foundation, either version 3 of the      #
+#   License, or (at your option) any later version.                         #
+#                                                                           #
+#   stripcc is distributed in the hope that it will be useful,              #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+#   GNU General Public License for more details.                            #
+#                                                                           #
+#   You should have received a copy of the GNU General Public License       #
+#   along with stripcc.  If not, see <http://www.gnu.org/licenses/>.        #
+#                                                                           #
+#############################################################################
 import os, logging, re, stat
 from parseconf import *
 
@@ -114,14 +136,14 @@ def test(stripcc):
     stripccCmd += ' -f'
     if os.system('%s >& %s/stripcc.out' % (stripccCmd, packageDir)) != 0:
         raise StripccError('Failed to strip')
-    # check
-    if make_dir:
-        os.chdir(make_dir)
-    os.system(clean)
-    if os.system(make) != 0:
-        raise StripccError('Failed to make')
-    if make_dir:
-        os.chdir(oldCwd)
+    ## check
+    #if make_dir:
+    #    os.chdir(make_dir)
+    #os.system(clean)
+    #if os.system(make) != 0:
+    #    raise StripccError('Failed to make')
+    #if make_dir:
+    #    os.chdir(oldCwd)
     # get totalCode after strip
     return totalCode('.') * 100.0 / codeAmount
 
@@ -130,7 +152,7 @@ def main():
     oldCwd = os.getcwd()
     stripcc = oldCwd.rpartition('/')[0] + '/stripcc'
     if not os.path.exists(stripcc):
-        print 'Can\'t find stripcc.'
+        print 'Can\'t locate stripcc.'
         return
 
     # init logging system
@@ -158,13 +180,19 @@ def main():
                 continue
             # strip OK
             logging.info('Stripped OK on %s, Remained/Original code: %f%%.' % (entry, remain))
-            # get invalid source file if found 
-            fp = open('%s/stripcc.out' % entry)
-            for line in fp:
-                m = re.search(r'Invalid source file: ([^,])+, ignore it', line)
-                if m:
-                    logging.info('Invalid source file: %s' % m.group(1))
-            fp.close()
+            ## get invalid source file if found 
+            #fp = open('%s/stripcc.out' % entry)
+            #for line in fp:
+            #    # mode
+            #    if line.find('Failed to build target in fast mode') != -1:
+            #        logging.info('Stripped %s in normal mode.' % entry)
+            #        continue
+            #    # invalid file
+            #    m = re.search(r'Invalid source file: ([^,])+, ignore it', line)
+            #    if m:
+            #        logging.info('Invalid source file in %s: %s.' % (entry, m.group(1)))
+            #        continue
+            #fp.close()
 
 if __name__ == '__main__':
     main()
