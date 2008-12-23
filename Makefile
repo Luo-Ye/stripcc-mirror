@@ -19,5 +19,11 @@ list.o: list.c list.h
 ringbuf.o: ringbuf.c ringbuf.h
 	${CC} ${CFLAGS} -c ringbuf.c
 
+install: stripcc
+	-cp stripcc /usr/local/bin
+
+uninstall:
+	-rm -f /usr/local/bin/stripcc
+
 clean: 
 	rm -f *.o stripcc
