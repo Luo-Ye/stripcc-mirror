@@ -2,6 +2,9 @@ stripcc 0.2.0 20081212
   modified by Du XiaoGang<dugang@188.com>.
 
 Adds:
+  1, add configuration file(stripcc.conf).
+  2, automatically ignore the syntax error in source file.
+  3, add fast strip mode.
 
 
 stripcc 0.1.1 20070914
